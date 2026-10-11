@@ -1,0 +1,67 @@
+<%- include('partials/header') %>
+
+<h1>Settings</h1>
+
+<section class="panel">
+  <form method="post" action="/settings" class="form">
+    <div class="row">
+      <label>Interval siklus</label>
+      <select name="intervalHours">
+        <% for (const h of intervals) { %>
+          <option value="<%= h %>" <%= settings.intervalHours === h ? 'selected' : '' %>>
+            tiap <%= h %> jam
+          </option>
+        <% } %>
+      </select>
+      <small>Satu siklus = cek username bergilir → ambil 1 video terbaru → unduh → upload ke semua channel.</small>
+    </div>
+
+    <div class="row">
+      <label>Jumlah video terbaru per siklus</label>
+      <select name="fetchBatchSize">
+        <% for (const n of [1, 2, 4, 8, 12]) { %>
+          <option value="<%= n %>" <%= settings.fetchBatchSize === n ? 'selected' : '' %>>
+            <%= n %> video terbaru
+          </option>
+        <% } %>
+      </select>
+      <small>1 = tiap siklus cuma ambil video paling baru; sisanya menyusul siklus berikutnya (tidak terlewat).</small>
+    </div>
+
+    <div class="row">
+      <label>Caption template (universal)</label>
+      <textarea name="captionTemplate" rows="4"><%= settings.captionTemplate %></textarea>
+      <small>Placeholder: <code>{caption}</code> <code>{username}</code> <code>{shortcode}</code></small>
+    </div>
+
+    <div class="row">
+      <label>Platform tujuan (channel di-discover otomatis dari Buffer)</label>
+      <div class="checks">
+        <% for (const s of ['instagram', 'tiktok', 'youtube']) { %>
+          <label class="check">
+            <input type="checkbox" name="services" value="<%= s %>"
+              <%= (settings.services || []).includes(s) ? 'checked' : '' %> />
+            <%= s %>
+          </label>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="row inline">
+      <label><input type="checkbox" name="autoUpload" <%= settings.autoUpload ? 'checked' : '' %> /> Auto upload ke Buffer</label>
+    </div>
+
+    <button type="submit" class="btn primary">Simpan</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Environment</h2>
+  <table>
+    <tr><td>PUBLIC_BASE_URL</td><td class="mono"><%= process.env.PUBLIC_BASE_URL || '(belum diisi)' %></td></tr>
+    <tr><td>BUFFER_API_KEY</td><td class="mono"><%= process.env.BUFFER_API_KEY ? '****' : '(belum diisi)' %></td></tr>
+    <tr><td>DOWNLOAD_DIR</td><td class="mono"><%= process.env.DOWNLOAD_DIR || 'downloads' %></td></tr>
+  </table>
+</section>
+
+<%- include('partials/footer') %>

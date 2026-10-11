@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> · AutoClip</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">AutoClip</div>
+    <nav>
+      <a href="/">Dashboard</a>
+      <a href="/usernames">Usernames</a>
+      <a href="/videos">Videos</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <form method="post" action="/run" class="run-form">
+      <button type="submit" class="btn primary">Run now</button>
+    </form>
+  </header>
+  <main class="container">

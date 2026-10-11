@@ -1,0 +1,57 @@
+<%- include('partials/header') %>
+
+<h1>Dashboard</h1>
+
+<div class="cards">
+  <div class="card"><span class="num"><%= counts.usernames %></span><span class="lbl">Username</span></div>
+  <div class="card"><span class="num"><%= counts.videos %></span><span class="lbl">Video</span></div>
+  <div class="card"><span class="num ok"><%= counts.uploaded %></span><span class="lbl">Uploaded</span></div>
+  <div class="card"><span class="num warn"><%= counts.partial %></span><span class="lbl">Partial</span></div>
+  <div class="card"><span class="num bad"><%= counts.failed %></span><span class="lbl">Failed</span></div>
+</div>
+
+<div class="meta">
+  <span>Siklus: <b>tiap <%= settings.intervalHours %> jam</b></span>
+  <span>Auto upload: <b><%= settings.autoUpload ? 'ON' : 'OFF' %></b></span>
+  <span>Run terakhir: <b><%= settings.lastRunAt || '-' %></b></span>
+</div>
+
+<div class="actions" style="margin-bottom:16px">
+  <form method="post" action="/run"><button class="btn primary">Jalankan siklus sekarang</button></form>
+</div>
+
+<div class="grid">
+  <section>
+    <h2>Video terbaru</h2>
+    <table>
+      <thead><tr><th>Owner</th><th>Shortcode</th><th>Status</th></tr></thead>
+      <tbody>
+        <% if (videos.length === 0) { %>
+          <tr><td colspan="3" class="empty">Belum ada video</td></tr>
+        <% } %>
+        <% for (const v of videos) { %>
+          <tr>
+            <td>@<%= v.owner %></td>
+            <td><%= v.shortcode %></td>
+            <td><span class="badge <%= v.status %>"><%= v.status %></span></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Log terbaru</h2>
+    <div class="logs">
+      <% for (const l of logs) { %>
+        <div class="log <%= l.level %>">
+          <span class="time"><%= (l.at || '').slice(11, 19) %></span>
+          <span class="msg"><%= l.message %></span>
+        </div>
+      <% } %>
+      <% if (logs.length === 0) { %><div class="empty">Belum ada log</div><% } %>
+    </div>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

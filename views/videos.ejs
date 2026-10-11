@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+
+<h1>Videos</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Owner</th><th>Shortcode</th><th>Status</th><th>Uploads</th><th>File</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% if (videos.length === 0) { %>
+      <tr><td colspan="5" class="empty">Belum ada video</td></tr>
+    <% } %>
+    <% for (const v of videos) { %>
+      <tr>
+        <td>@<%= v.owner %></td>
+        <td><%= v.shortcode %></td>
+        <td><span class="badge <%= v.status %>"><%= v.status %></span></td>
+        <td class="channels">
+          <% for (const u of (v.uploads || [])) { %>
+            <span class="chip <%= u.status %>">
+              <%= u.service %>: <%= u.status %><% if (u.bufferPostId) { %> (<%= u.bufferPostId %>)<% } %>
+              <% if (u.error) { %> — <%= u.error %><% } %>
+            </span>
+          <% } %>
+          <% if (!v.uploads || v.uploads.length === 0) { %><span class="empty">-</span><% } %>
+        </td>
+        <td class="mono"><%= v.file %></td>
+      </tr>
+    <% } %>
+  </tbody>
+</table>
+
+<%- include('partials/footer') %>
