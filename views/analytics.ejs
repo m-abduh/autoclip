@@ -1,0 +1,168 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Analytics</h1>
+    <p class="sub">Performa upload, akun Buffer, platform, dan sumber konten.</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <span class="stat-ico">🚀</span>
+    <span class="stat-num ok"><%= analytics.deliveries.uploaded %></span>
+    <span class="stat-lbl">Total upload sukses</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">⚠️</span>
+    <span class="stat-num bad"><%= analytics.deliveries.failed %></span>
+    <span class="stat-lbl">Total gagal</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">📈</span>
+    <span class="stat-num"><%= analytics.deliveries.successRate %>%</span>
+    <span class="stat-lbl">Success rate</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🎬</span>
+    <span class="stat-num"><%= analytics.videos.total %></span>
+    <span class="stat-lbl">Video (7 hari: <%= analytics.videos.week %>)</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🔑</span>
+    <span class="stat-num"><%= analytics.accounts.active %></span>
+    <span class="stat-lbl">Akun Buffer aktif</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">👤</span>
+    <span class="stat-num"><%= analytics.usernames.active %></span>
+    <span class="stat-lbl">Username aktif</span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Upload 14 hari terakhir</h2>
+    <div class="legend">
+      <span><i class="dot ok"></i> Sukses</span>
+      <span><i class="dot bad"></i> Gagal</span>
+    </div>
+  </div>
+  <% const maxDay = Math.max(1, ...analytics.daily.map((d) => d.uploaded + d.failed)); %>
+  <div class="chart tall">
+    <% analytics.daily.forEach((d) => { %>
+      <div class="bar-wrap" title="<%= d.day %> · <%= d.uploaded %> sukses, <%= d.failed %> gagal">
+        <div class="bar-stack">
+          <div class="bar bad" style="height:<%= Math.round((d.failed / maxDay) * 100) %>%"></div>
+          <div class="bar ok" style="height:<%= Math.round((d.uploaded / maxDay) * 100) %>%"></div>
+        </div>
+        <span class="bar-label"><%= d.day.slice(5) %></span>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head"><h2>Per kampanye</h2></div>
+    <table>
+      <thead><tr><th>Kampanye</th><th>Video</th><th>Sukses</th><th>Gagal</th><th>Rate</th></tr></thead>
+      <tbody>
+        <% if (!analytics.byCampaign.length) { %>
+          <tr><td colspan="5" class="empty">Belum ada data</td></tr>
+        <% } %>
+        <% analytics.byCampaign.forEach((c) => {
+          const attempted = c.uploaded + c.failed;
+          const rate = attempted ? Math.round((c.uploaded / attempted) * 100) : 0;
+        %>
+          <tr>
+            <td><a href="/campaigns/<%= c.id %>"><%= c.name %></a></td>
+            <td><%= c.videos %></td>
+            <td class="ok-text"><%= c.uploaded %></td>
+            <td class="bad-text"><%= c.failed %></td>
+            <td><%= rate %>%</td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Per akun Buffer</h2></div>
+    <table>
+      <thead><tr><th>Akun</th><th>Kampanye</th><th>Sukses</th><th>Gagal</th></tr></thead>
+      <tbody>
+        <% if (!analytics.byAccount.length) { %>
+          <tr><td colspan="4" class="empty">Belum ada akun</td></tr>
+        <% } %>
+        <% analytics.byAccount.forEach((a) => { %>
+          <tr>
+            <td><b><%= a.label %></b></td>
+            <td><%= a.campaignName %></td>
+            <td class="ok-text"><%= a.uploaded %></td>
+            <td class="bad-text"><%= a.failed %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head"><h2>Sumber konten teratas</h2></div>
+    <% const ownerMax = Math.max(1, ...analytics.topOwners.map((o) => o.n)); %>
+    <% if (!analytics.topOwners.length) { %>
+      <div class="empty">Belum ada video.</div>
+    <% } else { %>
+      <div class="hbars">
+        <% analytics.topOwners.forEach((o) => { %>
+          <div class="hbar">
+            <span class="hbar-name">@<%= o.owner %></span>
+            <div class="hbar-track"><div class="hbar-fill" style="width:<%= Math.round((o.n / ownerMax) * 100) %>%"></div></div>
+            <span class="hbar-val"><%= o.n %></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Aktivitas 24 jam</h2></div>
+    <% const hourMax = Math.max(1, ...analytics.hourly.map((h) => h.n)); %>
+    <% if (!analytics.hourly.length) { %>
+      <div class="empty">Belum ada aktivitas.</div>
+    <% } else { %>
+      <div class="chart">
+        <% analytics.hourly.forEach((h) => { %>
+          <div class="bar-wrap" title="<%= h.hour %> · <%= h.n %> log">
+            <div class="bar-stack"><div class="bar" style="height:<%= Math.round((h.n / hourMax) * 100) %>%"></div></div>
+            <span class="bar-label"><%= h.hour.slice(0, 2) %></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><h2>Status delivery</h2></div>
+  <% const totalStatus = Math.max(1, analytics.byStatus.reduce((a, r) => a + r.n, 0)); %>
+  <div class="hbars">
+    <% if (!analytics.byStatus.length) { %>
+      <div class="empty">Belum ada delivery.</div>
+    <% } %>
+    <% analytics.byStatus.forEach((r) => { %>
+      <div class="hbar">
+        <span class="hbar-name"><span class="badge <%= r.status %>"><%= r.status %></span></span>
+        <div class="hbar-track">
+          <div class="hbar-fill <%= r.status === 'uploaded' ? 'ok' : r.status === 'failed' ? 'bad' : '' %>"
+               style="width:<%= Math.round((r.n / totalStatus) * 100) %>%"></div>
+        </div>
+        <span class="hbar-val"><%= r.n %></span>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

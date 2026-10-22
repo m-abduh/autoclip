@@ -1,12 +1,15 @@
+import "dotenv/config";
 import * as store from "./src/store.js";
 
 const args = process.argv.slice(2);
 const usernames = args.length ? args : ["memezar", "wasted"];
 
-store.seed(usernames);
+const campaign = await store.seed({ campaign: "Default", usernames });
 
-console.log("Seed selesai:");
-for (const u of store.listUsernames()) {
-  console.log(`  - @${u.username} (${u.enabled ? "aktif" : "nonaktif"})`);
+console.log(`Seed selesai. Kampanye: ${campaign.name} (#${campaign.id})`);
+for (const u of await store.listAllUsernames()) {
+  console.log(`  - @${u.username} [${u.campaignName}] (${u.enabled ? "aktif" : "nonaktif"})`);
 }
-console.log("Settings:", JSON.stringify(store.getSettings()));
+console.log("Settings:", JSON.stringify(await store.getSettings()));
+
+await store.closePool();

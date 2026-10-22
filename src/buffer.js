@@ -3,20 +3,20 @@ import axios from "axios";
 const API_URL = process.env.BUFFER_API_URL || "https://api.buffer.com";
 const MODE = process.env.BUFFER_MODE || "shareNow"; // shareNow | addToQueue | customScheduled
 
-function token() {
-  const t = process.env.BUFFER_API_KEY || process.env.BUFFER_TOKEN;
-  if (!t) throw new Error("BUFFER_API_KEY belum diisi di .env");
+function resolveToken(token) {
+  const t = token || process.env.BUFFER_API_KEY || process.env.BUFFER_TOKEN;
+  if (!t) throw new Error("API key Buffer belum diisi (tambahkan akun Buffer di kampanye)");
   return t;
 }
 
-async function graphql(query, variables = {}) {
+async function graphql(query, variables = {}, token) {
   const res = await axios.post(
     API_URL,
     { query, variables },
     {
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token()}`,
+        Authorization: `Bearer ${resolveToken(token)}`,
       },
       validateStatus: () => true,
     }
@@ -33,18 +33,34 @@ async function graphql(query, variables = {}) {
   return res.data?.data;
 }
 
-export async function getChannels() {
-  const orgData = await graphql(`query { account { organizations { id } } }`);
+// Semua channel dari semua organization yang bisa diakses token ini.
+export async function getChannels(token) {
+  const orgData = await graphql(`query { account { organizations { id } } }`, {}, token);
   const orgs = orgData?.account?.organizations ?? [];
   if (!orgs.length) return { organizations: [], channels: [] };
 
-  const chData = await graphql(
-    `query ($orgId: OrganizationId!) {
-      channels(input: { organizationId: $orgId }) { id name service }
-    }`,
-    { orgId: orgs[0].id }
-  );
-  return { organizations: orgs, channels: chData?.channels ?? [] };
+  const channels = [];
+  const seen = new Set();
+  for (const org of orgs) {
+    const chData = await graphql(
+      `query ($orgId: OrganizationId!) {
+        channels(input: { organizationId: $orgId }) { id name service }
+      }`,
+      { orgId: org.id },
+      token
+    );
+    for (const ch of chData?.channels ?? []) {
+      if (seen.has(ch.id)) continue;
+      seen.add(ch.id);
+      channels.push({ ...ch, organizationId: org.id });
+    }
+  }
+  return { organizations: orgs, channels };
+}
+
+export async function testToken(token) {
+  const { organizations, channels } = await getChannels(token);
+  return { organizations: organizations.length, channels: channels.length };
 }
 
 function buildMetadata(service, videoTitle) {
@@ -65,6 +81,7 @@ function buildMetadata(service, videoTitle) {
 }
 
 export async function createPost({
+  token,
   channelId,
   service,
   text,
@@ -93,7 +110,7 @@ export async function createPost({
     }
   }`;
 
-  const data = await graphql(query, { input });
+  const data = await graphql(query, { input }, token);
   const result = data?.createPost;
   if (result?.post) return { postId: result.post.id, dueAt: result.post.dueAt };
   throw new Error(result?.message || "Buffer menolak createPost (tanpa pesan)");

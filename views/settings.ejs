@@ -1,6 +1,11 @@
 <%- include('partials/header') %>
 
-<h1>Settings</h1>
+<div class="page-head">
+  <div>
+    <h1>Settings</h1>
+    <p class="sub">Pengaturan global yang berlaku untuk semua kampanye.</p>
+  </div>
+</div>
 
 <section class="panel">
   <form method="post" action="/settings" class="form">
@@ -13,7 +18,7 @@
           </option>
         <% } %>
       </select>
-      <small>Satu siklus = cek username bergilir → ambil 1 video terbaru → unduh → upload ke semua channel.</small>
+      <small>Tiap siklus: rotasi username per kampanye → ambil 1 video terbaru → distribusi ke akun Buffer kampanye.</small>
     </div>
 
     <div class="row">
@@ -35,7 +40,7 @@
     </div>
 
     <div class="row">
-      <label>Platform tujuan (channel di-discover otomatis dari Buffer)</label>
+      <label>Platform tujuan (channel di-discover otomatis dari tiap akun Buffer)</label>
       <div class="checks">
         <% for (const s of ['instagram', 'tiktok', 'youtube']) { %>
           <label class="check">
@@ -51,17 +56,22 @@
       <label><input type="checkbox" name="autoUpload" <%= settings.autoUpload ? 'checked' : '' %> /> Auto upload ke Buffer</label>
     </div>
 
-    <button type="submit" class="btn primary">Simpan</button>
+    <button type="submit" class="btn primary">Simpan settings</button>
   </form>
 </section>
 
 <section class="panel">
-  <h2>Environment</h2>
+  <div class="panel-head"><h2>Environment</h2></div>
   <table>
+    <tr><td>Database</td><td class="mono">Prisma Postgres (DATABASE_URL) <% if (process.env.DATABASE_URL) { %><span class="badge uploaded">terhubung</span><% } else { %><span class="badge failed">belum diisi</span><% } %></td></tr>
     <tr><td>PUBLIC_BASE_URL</td><td class="mono"><%= process.env.PUBLIC_BASE_URL || '(belum diisi)' %></td></tr>
-    <tr><td>BUFFER_API_KEY</td><td class="mono"><%= process.env.BUFFER_API_KEY ? '****' : '(belum diisi)' %></td></tr>
     <tr><td>DOWNLOAD_DIR</td><td class="mono"><%= process.env.DOWNLOAD_DIR || 'downloads' %></td></tr>
+    <tr><td>BUFFER_MODE</td><td class="mono"><%= process.env.BUFFER_MODE || 'shareNow' %></td></tr>
   </table>
+  <p class="hint" style="margin-top:12px">
+    Akun Buffer tidak lagi diambil dari <code>.env</code> — tambahkan per kampanye di halaman
+    <a href="/campaigns">Kampanye</a>.
+  </p>
 </section>
 
 <%- include('partials/footer') %>

@@ -1,35 +1,55 @@
 <%- include('partials/header') %>
 
-<h1>Videos</h1>
+<div class="page-head">
+  <div>
+    <h1>Videos</h1>
+    <p class="sub">Semua reel yang pernah diunduh dan status upload-nya per kampanye/akun.</p>
+  </div>
+</div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Owner</th><th>Shortcode</th><th>Status</th><th>Uploads</th><th>File</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% if (videos.length === 0) { %>
-      <tr><td colspan="5" class="empty">Belum ada video</td></tr>
-    <% } %>
-    <% for (const v of videos) { %>
-      <tr>
-        <td>@<%= v.owner %></td>
-        <td><%= v.shortcode %></td>
-        <td><span class="badge <%= v.status %>"><%= v.status %></span></td>
-        <td class="channels">
-          <% for (const u of (v.uploads || [])) { %>
-            <span class="chip <%= u.status %>">
-              <%= u.service %>: <%= u.status %><% if (u.bufferPostId) { %> (<%= u.bufferPostId %>)<% } %>
-              <% if (u.error) { %> — <%= u.error %><% } %>
-            </span>
-          <% } %>
-          <% if (!v.uploads || v.uploads.length === 0) { %><span class="empty">-</span><% } %>
-        </td>
-        <td class="mono"><%= v.file %></td>
-      </tr>
-    <% } %>
-  </tbody>
-</table>
+<%
+  const byVideo = new Map();
+  deliveries.forEach((d) => {
+    const k = d.owner + '/' + d.shortcode;
+    if (!byVideo.has(k)) byVideo.set(k, []);
+    byVideo.get(k).push(d);
+  });
+%>
+
+<section class="panel">
+  <table>
+    <thead>
+      <tr><th>Owner</th><th>Shortcode</th><th>Status</th><th>Upload</th><th>Terunduh</th></tr>
+    </thead>
+    <tbody>
+      <% if (!videos.length) { %>
+        <tr><td colspan="5" class="empty">Belum ada video</td></tr>
+      <% } %>
+      <% videos.forEach((v) => {
+        const list = byVideo.get(v.owner + '/' + v.shortcode) || [];
+        const ok = list.filter((d) => d.status === 'uploaded').length;
+        const bad = list.filter((d) => d.status === 'failed').length;
+        const st = ok && !bad ? 'uploaded' : ok ? 'partial' : bad ? 'failed' : 'downloaded';
+      %>
+        <tr>
+          <td>@<%= v.owner %></td>
+          <td class="mono"><%= v.shortcode %></td>
+          <td><span class="badge <%= st %>"><%= st %></span></td>
+          <td class="channels">
+            <% if (!list.length) { %><span class="empty">-</span><% } %>
+            <% list.forEach((d) => { %>
+              <span class="chip <%= d.status %>" title="<%= d.error || '' %>">
+                <%= campaignNames.get(d.campaignId) || '#' + d.campaignId %> ·
+                <%= d.service %> · <%= d.status %>
+                <% if (d.bufferPostId) { %>(<%= d.bufferPostId %>)<% } %>
+              </span>
+            <% }) %>
+          </td>
+          <td class="mono"><%= (v.downloadedAt || '').slice(0, 16).replace('T', ' ') %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
 
 <%- include('partials/footer') %>

@@ -1,7 +1,7 @@
 {
   "name": "autoclip",
-  "version": "0.2.0",
-  "description": "Auto-download Instagram videos and auto-publish to Buffer (YouTube, TikTok, Instagram).",
+  "version": "0.3.0",
+  "description": "Auto-download Instagram videos and auto-publish to multiple Buffer accounts, grouped per campaign.",
   "type": "module",
   "main": "index.js",
   "scripts": {
@@ -14,6 +14,7 @@
     "dotenv": "^16.4.0",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
-    "node-cron": "^4.0.0"
+    "node-cron": "^4.0.0",
+    "pg": "^8.16.3"
   }
 }
