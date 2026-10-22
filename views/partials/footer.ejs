@@ -1,4 +1,14 @@
   </main>
-  <footer class="foot">AutoClip · Instagram → Buffer</footer>
+  <footer class="foot">
+    AutoClip · Instagram → Buffer · <span class="dot-sep">Prisma Postgres</span>
+  </footer>
+  <script>
+    // Konfirmasi generik untuk tombol hapus.
+    document.querySelectorAll("form[data-confirm]").forEach((form) => {
+      form.addEventListener("submit", (e) => {
+        if (!confirm(form.getAttribute("data-confirm"))) e.preventDefault();
+      });
+    });
+  </script>
 </body>
 </html>

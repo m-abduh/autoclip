@@ -1,55 +1,200 @@
 <%- include('partials/header') %>
 
-<h1>Dashboard</h1>
-
-<div class="cards">
-  <div class="card"><span class="num"><%= counts.usernames %></span><span class="lbl">Username</span></div>
-  <div class="card"><span class="num"><%= counts.videos %></span><span class="lbl">Video</span></div>
-  <div class="card"><span class="num ok"><%= counts.uploaded %></span><span class="lbl">Uploaded</span></div>
-  <div class="card"><span class="num warn"><%= counts.partial %></span><span class="lbl">Partial</span></div>
-  <div class="card"><span class="num bad"><%= counts.failed %></span><span class="lbl">Failed</span></div>
+<div class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="sub">Ringkasan performa auto-clip: sumber Instagram → akun Buffer.</p>
+  </div>
+  <div class="head-meta">
+    <span class="pill">Siklus <b>tiap <%= settings.intervalHours %> jam</b></span>
+    <span class="pill"><%= settings.autoUpload ? 'Auto upload ON' : 'Auto upload OFF' %></span>
+    <span class="pill">Run terakhir <b><%= settings.lastRunAt ? settings.lastRunAt.slice(0, 16).replace('T', ' ') : '-' %></b></span>
+  </div>
 </div>
 
-<div class="meta">
-  <span>Siklus: <b>tiap <%= settings.intervalHours %> jam</b></span>
-  <span>Auto upload: <b><%= settings.autoUpload ? 'ON' : 'OFF' %></b></span>
-  <span>Run terakhir: <b><%= settings.lastRunAt || '-' %></b></span>
+<% if (!hasPublicUrl) { %>
+  <div class="alert warn">
+    <b>PUBLIC_BASE_URL belum diisi.</b> Buffer butuh URL publik untuk mengambil video, jadi upload tidak akan jalan.
+    Isi di <code>.env</code> lalu restart.
+  </div>
+<% } %>
+
+<div class="stats">
+  <div class="stat">
+    <span class="stat-ico">🎯</span>
+    <span class="stat-num"><%= analytics.campaigns.active %><small>/<%= analytics.campaigns.total %></small></span>
+    <span class="stat-lbl">Kampanye aktif</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🔑</span>
+    <span class="stat-num"><%= analytics.accounts.active %><small>/<%= analytics.accounts.total %></small></span>
+    <span class="stat-lbl">Akun Buffer</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">👤</span>
+    <span class="stat-num"><%= analytics.usernames.active %><small>/<%= analytics.usernames.total %></small></span>
+    <span class="stat-lbl">Username IG</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🎬</span>
+    <span class="stat-num"><%= analytics.videos.total %></span>
+    <span class="stat-lbl">Video terunduh · <%= analytics.videos.today %> hari ini</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🚀</span>
+    <span class="stat-num ok"><%= analytics.deliveries.uploaded %></span>
+    <span class="stat-lbl">Upload sukses · <%= analytics.deliveries.todayUploaded %> hari ini</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">📈</span>
+    <span class="stat-num <%= analytics.deliveries.successRate >= 80 ? 'ok' : analytics.deliveries.successRate >= 50 ? 'warn' : 'bad' %>"><%= analytics.deliveries.successRate %>%</span>
+    <span class="stat-lbl">Success rate · <%= analytics.deliveries.failed %> gagal</span>
+  </div>
 </div>
 
-<div class="actions" style="margin-bottom:16px">
-  <form method="post" action="/run"><button class="btn primary">Jalankan siklus sekarang</button></form>
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Upload 14 hari terakhir</h2>
+      <div class="legend">
+        <span><i class="dot ok"></i> Sukses</span>
+        <span><i class="dot bad"></i> Gagal</span>
+      </div>
+    </div>
+    <% const maxDay = Math.max(1, ...analytics.daily.map((d) => d.uploaded + d.failed)); %>
+    <div class="chart">
+      <% analytics.daily.forEach((d) => { %>
+        <div class="bar-wrap" title="<%= d.day %> · <%= d.uploaded %> sukses, <%= d.failed %> gagal">
+          <div class="bar-stack">
+            <div class="bar bad" style="height:<%= Math.round((d.failed / maxDay) * 100) %>%"></div>
+            <div class="bar ok" style="height:<%= Math.round((d.uploaded / maxDay) * 100) %>%"></div>
+          </div>
+          <span class="bar-label"><%= d.day.slice(8) %></span>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Per platform</h2></div>
+    <%
+      const svc = {};
+      analytics.byService.forEach((r) => {
+        if (!svc[r.service]) svc[r.service] = { uploaded: 0, failed: 0 };
+        if (r.status === 'uploaded') svc[r.service].uploaded += r.n;
+        if (r.status === 'failed') svc[r.service].failed += r.n;
+      });
+      const svcEntries = Object.entries(svc).sort((a, b) => (b[1].uploaded + b[1].failed) - (a[1].uploaded + a[1].failed));
+      const svcMax = Math.max(1, ...svcEntries.map(([, v]) => v.uploaded + v.failed));
+    %>
+    <% if (!svcEntries.length) { %>
+      <div class="empty">Belum ada data upload.</div>
+    <% } else { %>
+      <div class="hbars">
+        <% svcEntries.forEach(([name, v]) => { %>
+          <div class="hbar">
+            <span class="hbar-name"><%= name %></span>
+            <div class="hbar-track">
+              <div class="hbar-fill ok" style="width:<%= Math.round((v.uploaded / svcMax) * 100) %>%"></div>
+              <div class="hbar-fill bad" style="width:<%= Math.round((v.failed / svcMax) * 100) %>%"></div>
+            </div>
+            <span class="hbar-val"><%= v.uploaded %><small>/<%= v.uploaded + v.failed %></small></span>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </section>
 </div>
 
-<div class="grid">
-  <section>
-    <h2>Video terbaru</h2>
+<section class="panel">
+  <div class="panel-head">
+    <h2>Kampanye</h2>
+    <a class="btn ghost" href="/campaigns">Kelola kampanye →</a>
+  </div>
+  <% if (!campaigns.length) { %>
+    <div class="empty">Belum ada kampanye. <a href="/campaigns">Buat sekarang</a>.</div>
+  <% } else { %>
+    <div class="campaign-grid">
+      <% campaigns.forEach((c) => { const s = analytics.byCampaign.find((x) => x.id === c.id) || { uploaded: 0, failed: 0, total: 0, videos: 0 }; %>
+        <a class="campaign-card" href="/campaigns/<%= c.id %>">
+          <div class="cc-top">
+            <span class="cc-name"><%= c.name %></span>
+            <span class="badge <%= c.enabled ? 'uploaded' : 'skipped' %>"><%= c.enabled ? 'aktif' : 'nonaktif' %></span>
+          </div>
+          <div class="cc-meta">
+            <span>🔑 <%= c.accountCount %> akun</span>
+            <span>👤 <%= c.usernameCount %> username</span>
+            <span>🎬 <%= s.videos %> video</span>
+          </div>
+          <% const pct = s.total ? Math.round((s.uploaded / s.total) * 100) : 0; %>
+          <div class="progress"><div class="progress-fill" style="width:<%= pct %>%"></div></div>
+          <div class="cc-foot"><span><%= s.uploaded %> sukses</span><span><%= s.failed %> gagal</span><span><%= pct %>%</span></div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head"><h2>Video terbaru</h2></div>
     <table>
       <thead><tr><th>Owner</th><th>Shortcode</th><th>Status</th></tr></thead>
       <tbody>
-        <% if (videos.length === 0) { %>
+        <% if (!videos.length) { %>
           <tr><td colspan="3" class="empty">Belum ada video</td></tr>
         <% } %>
-        <% for (const v of videos) { %>
+        <%
+          const byVideo = new Map();
+          deliveries.forEach((d) => {
+            const k = d.owner + '/' + d.shortcode;
+            const cur = byVideo.get(k) || { ok: 0, bad: 0 };
+            if (d.status === 'uploaded') cur.ok++;
+            if (d.status === 'failed') cur.bad++;
+            byVideo.set(k, cur);
+          });
+        %>
+        <% videos.forEach((v) => {
+          const s = byVideo.get(v.owner + '/' + v.shortcode) || { ok: 0, bad: 0 };
+          const st = s.ok && !s.bad ? 'uploaded' : s.ok ? 'partial' : s.bad ? 'failed' : 'downloaded';
+        %>
           <tr>
             <td>@<%= v.owner %></td>
-            <td><%= v.shortcode %></td>
-            <td><span class="badge <%= v.status %>"><%= v.status %></span></td>
+            <td class="mono"><%= v.shortcode %></td>
+            <td><span class="badge <%= st %>"><%= st %></span></td>
           </tr>
-        <% } %>
+        <% }) %>
       </tbody>
     </table>
   </section>
 
-  <section>
-    <h2>Log terbaru</h2>
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Log terbaru</h2>
+      <div class="actions">
+        <a class="btn ghost" href="/videos">Semua video →</a>
+        <form method="post" action="/logs/clear" data-confirm="Hapus semua log?">
+          <button type="submit" class="btn ghost icon-btn" title="Hapus semua log" aria-label="Hapus semua log">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 14H6L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
     <div class="logs">
-      <% for (const l of logs) { %>
+      <% logs.forEach((l) => { %>
         <div class="log <%= l.level %>">
           <span class="time"><%= (l.at || '').slice(11, 19) %></span>
           <span class="msg"><%= l.message %></span>
         </div>
-      <% } %>
-      <% if (logs.length === 0) { %><div class="empty">Belum ada log</div><% } %>
+      <% }) %>
+      <% if (!logs.length) { %><div class="empty">Belum ada log</div><% } %>
     </div>
   </section>
 </div>

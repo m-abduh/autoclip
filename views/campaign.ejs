@@ -1,0 +1,188 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <div>
+    <a class="back" href="/campaigns">← Semua kampanye</a>
+    <h1><%= campaign.name %> <span class="badge <%= campaign.enabled ? 'uploaded' : 'skipped' %>"><%= campaign.enabled ? 'aktif' : 'nonaktif' %></span></h1>
+    <p class="sub">Grup sumber Instagram dan akun Buffer untuk kampanye ini.</p>
+  </div>
+  <div class="head-actions">
+    <form method="post" action="/campaigns/<%= campaign.id %>/toggle">
+      <button class="btn"><%= campaign.enabled ? 'Matikan' : 'Aktifkan' %></button>
+    </form>
+    <form method="post" action="/campaigns/<%= campaign.id %>/remove"
+          data-confirm="Hapus kampanye <%= campaign.name %> beserta akun & username-nya?">
+      <button class="btn danger">Hapus kampanye</button>
+    </form>
+  </div>
+</div>
+
+<div class="stats small">
+  <div class="stat">
+    <span class="stat-ico">🔑</span>
+    <span class="stat-num"><%= accounts.filter((a) => a.enabled).length %><small>/<%= accounts.length %></small></span>
+    <span class="stat-lbl">Akun Buffer</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">👤</span>
+    <span class="stat-num"><%= usernames.filter((u) => u.enabled).length %><small>/<%= usernames.length %></small></span>
+    <span class="stat-lbl">Username IG</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🎬</span>
+    <span class="stat-num"><%= campaignStats ? campaignStats.videos : 0 %></span>
+    <span class="stat-lbl">Video</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">🚀</span>
+    <span class="stat-num ok"><%= campaignStats ? campaignStats.uploaded : 0 %></span>
+    <span class="stat-lbl">Upload sukses</span>
+  </div>
+  <div class="stat">
+    <span class="stat-ico">⚠️</span>
+    <span class="stat-num bad"><%= campaignStats ? campaignStats.failed : 0 %></span>
+    <span class="stat-lbl">Gagal</span>
+  </div>
+</div>
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Akun Buffer (API key)</h2>
+      <span class="hint">Channel di-discover otomatis per key</span>
+    </div>
+
+    <form method="post" action="/campaigns/<%= campaign.id %>/accounts/add" class="form compact">
+      <div class="row-2">
+        <div class="row">
+          <label>Label</label>
+          <input name="label" placeholder="mis. Buffer Utama" maxlength="60" />
+        </div>
+        <div class="row">
+          <label>API key Buffer</label>
+          <input name="apiKey" placeholder="Bearer token / API key" required autocomplete="off" />
+        </div>
+      </div>
+      <button type="submit" class="btn primary">+ Tambah akun Buffer</button>
+    </form>
+
+    <div id="channelsOut" class="channels-out"></div>
+
+    <table class="stacked">
+      <thead><tr><th>Label</th><th>Key</th><th>Status</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <% if (!accounts.length) { %>
+          <tr><td colspan="4" class="empty">Belum ada akun Buffer. Tambahkan API key di atas.</td></tr>
+        <% } %>
+        <% accounts.forEach((a) => { %>
+          <tr>
+            <td><b><%= a.label || 'Akun #' + a.id %></b></td>
+            <td class="mono"><%= a.masked %></td>
+            <td><span class="badge <%= a.enabled ? 'uploaded' : 'skipped' %>"><%= a.enabled ? 'aktif' : 'nonaktif' %></span></td>
+            <td class="actions">
+              <button type="button" class="btn" data-channels="<%= a.id %>">Cek channel</button>
+              <form method="post" action="/campaigns/<%= campaign.id %>/accounts/<%= a.id %>/toggle">
+                <button class="btn"><%= a.enabled ? 'Matikan' : 'Aktifkan' %></button>
+              </form>
+              <form method="post" action="/campaigns/<%= campaign.id %>/accounts/<%= a.id %>/remove"
+                    data-confirm="Hapus akun Buffer <%= a.label || a.id %>?">
+                <button class="btn danger">Hapus</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Username Instagram</h2>
+      <span class="hint"><%= usernames.filter((u) => u.enabled).length %> aktif</span>
+    </div>
+
+    <form method="post" action="/campaigns/<%= campaign.id %>/usernames/add" class="form compact">
+      <div class="row">
+        <label>Username</label>
+        <input name="username" placeholder="zabdiel.soriton" required />
+      </div>
+      <button type="submit" class="btn primary">+ Tambah username</button>
+    </form>
+
+    <table class="stacked">
+      <thead><tr><th>Username</th><th>Status</th><th>Seen</th><th>Aksi</th></tr></thead>
+      <tbody>
+        <% if (!usernames.length) { %>
+          <tr><td colspan="4" class="empty">Belum ada username.</td></tr>
+        <% } %>
+        <% usernames.forEach((u) => { %>
+          <tr>
+            <td>@<%= u.username %></td>
+            <td><span class="badge <%= u.enabled ? 'uploaded' : 'skipped' %>"><%= u.enabled ? 'aktif' : 'nonaktif' %></span></td>
+            <td class="mono"><%= (u.seen || []).length %></td>
+            <td class="actions">
+              <form method="post" action="/campaigns/<%= campaign.id %>/usernames/<%= u.username %>/toggle">
+                <button class="btn"><%= u.enabled ? 'Matikan' : 'Aktifkan' %></button>
+              </form>
+              <form method="post" action="/campaigns/<%= campaign.id %>/usernames/<%= u.username %>/remove"
+                    data-confirm="Hapus @<%= u.username %> dari kampanye ini?">
+                <button class="btn danger">Hapus</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Riwayat upload kampanye</h2>
+    <span class="hint">50 terbaru</span>
+  </div>
+  <table>
+    <thead><tr><th>Waktu</th><th>Video</th><th>Akun</th><th>Channel</th><th>Status</th></tr></thead>
+    <tbody>
+      <% if (!deliveries.length) { %>
+        <tr><td colspan="5" class="empty">Belum ada upload.</td></tr>
+      <% } %>
+      <% deliveries.forEach((d) => { %>
+        <tr>
+          <td class="mono"><%= (d.updatedAt || '').slice(0, 16).replace('T', ' ') %></td>
+          <td class="mono">@<%= d.owner %>/<%= d.shortcode %></td>
+          <td>#<%= d.bufferAccountId %></td>
+          <td><%= d.service %> · <%= d.channelName %></td>
+          <td>
+            <span class="badge <%= d.status %>"><%= d.status %></span>
+            <% if (d.error) { %><div class="err"><%= d.error %></div><% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+
+<script>
+  document.querySelectorAll("[data-channels]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const out = document.getElementById("channelsOut");
+      out.textContent = "Memuat channel...";
+      out.className = "channels-out";
+      try {
+        const res = await fetch("/api/channels?accountId=" + encodeURIComponent(btn.dataset.channels));
+        const data = await res.json();
+        if (data.error) { out.textContent = "Error: " + data.error; out.className = "channels-out err"; return; }
+        if (!data.channels || !data.channels.length) { out.textContent = "Tidak ada channel terhubung untuk akun ini."; return; }
+        out.innerHTML = data.channels
+          .map((c) => `<span class="chip">${c.service}: ${c.name} — <code>${c.id}</code></span>`)
+          .join(" ");
+      } catch (err) {
+        out.textContent = "Error: " + err.message;
+        out.className = "channels-out err";
+      }
+    });
+  });
+</script>
+
+<%- include('partials/footer') %>

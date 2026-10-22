@@ -1,72 +1,31 @@
 <%- include('partials/header') %>
 
-<h1>Usernames</h1>
-
-<section class="panel">
-  <div class="row inline" style="justify-content: space-between;">
-    <h2 style="margin:0">Channel Buffer (otomatis)</h2>
-    <button type="button" class="btn" id="loadChannels">Muat channel</button>
+<div class="page-head">
+  <div>
+    <h1>Usernames</h1>
+    <p class="sub">Semua sumber Instagram lintas kampanye. Tambah/hapus dari halaman kampanye.</p>
   </div>
-  <div id="channelsOut" class="channels" style="margin-top:12px; max-width:none">
-    Klik "Muat channel" untuk melihat akun Buffer yang terhubung. Video akan diposting ke semua channel yang aktif (sesuai platform di Settings).
-  </div>
-</section>
-
-<script>
-  document.getElementById("loadChannels").addEventListener("click", async () => {
-    const out = document.getElementById("channelsOut");
-    out.textContent = "Memuat...";
-    try {
-      const res = await fetch("/api/channels");
-      const data = await res.json();
-      if (data.error) { out.textContent = "Error: " + data.error; return; }
-      if (!data.channels || !data.channels.length) { out.textContent = "Tidak ada channel terhubung."; return; }
-      out.innerHTML = data.channels
-        .map((c) => `<span class="chip">${c.service}: ${c.name} — <code>${c.id}</code></span>`)
-        .join(" ");
-    } catch (err) {
-      out.textContent = "Error: " + err.message;
-    }
-  });
-</script>
+</div>
 
 <section class="panel">
-  <h2>Tambah username</h2>
-  <form method="post" action="/usernames/add" class="form">
-    <div class="row">
-      <label>Username Instagram</label>
-      <input name="username" placeholder="zabdiel.soriton" required />
-    </div>
-    <button type="submit" class="btn primary">Tambah</button>
-  </form>
-</section>
-
-<section class="panel">
-  <h2>Daftar username</h2>
   <table>
-    <thead>
-      <tr><th>Username</th><th>Status</th><th>Seen</th><th>Aksi</th></tr>
-    </thead>
+    <thead><tr><th>Kampanye</th><th>Username</th><th>Status</th><th>Seen</th><th>Ditambahkan</th></tr></thead>
     <tbody>
-      <% if (usernames.length === 0) { %>
-        <tr><td colspan="4" class="empty">Belum ada username</td></tr>
+      <% if (!usernames.length) { %>
+        <tr><td colspan="5" class="empty">Belum ada username. <a href="/campaigns">Buat kampanye</a> dulu.</td></tr>
       <% } %>
-      <% for (const u of usernames) { %>
+      <% usernames.forEach((u) => { %>
         <tr>
+          <td><a href="/campaigns/<%= u.campaignId %>"><%= u.campaignName %></a></td>
           <td>@<%= u.username %></td>
-          <td><span class="badge <%= u.enabled ? 'uploaded' : 'skipped' %>"><%= u.enabled ? 'aktif' : 'nonaktif' %></span></td>
-          <td><%= (u.seen || []).length %></td>
-          <td class="actions">
-            <form method="post" action="/usernames/<%= u.username %>/toggle">
-              <button class="btn"><%= u.enabled ? 'Matikan' : 'Aktifkan' %></button>
-            </form>
-            <form method="post" action="/usernames/<%= u.username %>/remove"
-                  onsubmit="return confirm('Hapus @<%= u.username %>?')">
-              <button class="btn danger">Hapus</button>
-            </form>
+          <td>
+            <span class="badge <%= u.enabled ? 'uploaded' : 'skipped' %>"><%= u.enabled ? 'aktif' : 'nonaktif' %></span>
+            <% if (!u.campaignEnabled) { %><span class="badge skipped">kampanye off</span><% } %>
           </td>
+          <td class="mono"><%= (u.seen || []).length %></td>
+          <td class="mono"><%= (u.createdAt || '').slice(0, 10) %></td>
         </tr>
-      <% } %>
+      <% }) %>
     </tbody>
   </table>
 </section>

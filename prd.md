@@ -1,5 +1,11 @@
 # PRD — AutoClip (Instagram → Buffer Auto-Publisher)
 
+> ## Status implementasi (v0.3)
+> - **Multi-akun via Kampanye**: satu kampanye punya **banyak akun Buffer (API key)** dan **banyak username Instagram**. Satu username boleh ikut beberapa kampanye.
+> - **Database**: **Prisma Postgres** (`DATABASE_URL`), bukan lagi SQLite.
+> - **Analytics**: dashboard lengkap + halaman `/analytics` (upload harian, per platform, per akun, per kampanye, success rate, sumber konten teratas).
+> - Detail teknis terkini ada di `src/store.js`, `src/pipeline.js`, dan `index.js`.
+
 ## 1. Ringkasan
 AutoClip adalah sebuah **service Node.js** yang memantau beberapa akun Instagram
 (berbasis username), mengunduh **video baru** (apa adanya, tanpa re-encode),

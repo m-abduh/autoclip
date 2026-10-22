@@ -16,18 +16,19 @@ function safeChoice(value, list, fallback) {
 }
 
 export function startScheduler() {
-  rebuild();
+  rebuild().catch((err) => console.error("[scheduler] gagal start:", err.message));
 }
 
 export function reschedule() {
-  rebuild();
+  rebuild().catch((err) => console.error("[scheduler] gagal reschedule:", err.message));
 }
 
-function rebuild() {
+async function rebuild() {
   tasks.forEach((t) => t.stop());
   tasks = [];
 
-  const hours = safeChoice(store.getSettings().intervalHours, ALLOWED_INTERVALS, 1);
+  const settings = await store.getSettings();
+  const hours = safeChoice(settings.intervalHours, ALLOWED_INTERVALS, 1);
   const expr = expressionFor(hours);
   if (cron.validate(expr)) {
     tasks.push(
@@ -39,6 +40,7 @@ function rebuild() {
   }
 }
 
-export function getIntervalHours() {
-  return safeChoice(store.getSettings().intervalHours, ALLOWED_INTERVALS, 1);
+export async function getIntervalHours() {
+  const settings = await store.getSettings();
+  return safeChoice(settings.intervalHours, ALLOWED_INTERVALS, 1);
 }

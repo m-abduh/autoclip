@@ -8,15 +8,20 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">AutoClip</div>
-    <nav>
-      <a href="/">Dashboard</a>
-      <a href="/usernames">Usernames</a>
-      <a href="/videos">Videos</a>
-      <a href="/settings">Settings</a>
+    <a class="brand" href="/">
+      <span class="logo">AC</span>
+      <span>AutoClip</span>
+    </a>
+    <nav class="nav">
+      <a href="/" class="<%= path === '/' ? 'active' : '' %>">Dashboard</a>
+      <a href="/campaigns" class="<%= path.startsWith('/campaigns') ? 'active' : '' %>">Kampanye</a>
+      <a href="/videos" class="<%= path.startsWith('/videos') ? 'active' : '' %>">Videos</a>
+      <a href="/usernames" class="<%= path.startsWith('/usernames') ? 'active' : '' %>">Usernames</a>
+      <a href="/analytics" class="<%= path.startsWith('/analytics') ? 'active' : '' %>">Analytics</a>
+      <a href="/settings" class="<%= path.startsWith('/settings') ? 'active' : '' %>">Settings</a>
     </nav>
     <form method="post" action="/run" class="run-form">
-      <button type="submit" class="btn primary">Run now</button>
+      <button type="submit" class="btn primary">▶ Run now</button>
     </form>
   </header>
   <main class="container">

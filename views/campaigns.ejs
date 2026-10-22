@@ -1,0 +1,53 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <div>
+    <h1>Kampanye</h1>
+    <p class="sub">Satu kampanye = grup sumber Instagram + beberapa akun Buffer (API key).</p>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Buat kampanye baru</h2>
+  <form method="post" action="/campaigns/add" class="form inline-form">
+    <input name="name" placeholder="mis. meme, kampanye-ramadan, promo-oktober" required maxlength="80" />
+    <button type="submit" class="btn primary">+ Tambah kampanye</button>
+  </form>
+</section>
+
+<% if (!campaigns.length) { %>
+  <section class="panel"><div class="empty">Belum ada kampanye. Buat yang pertama di atas.</div></section>
+<% } else { %>
+  <div class="campaign-grid wide">
+    <% campaigns.forEach((c) => {
+      const s = (stats || []).find((x) => x.id === c.id) || { uploaded: 0, failed: 0, total: 0, videos: 0 };
+      const pct = s.total ? Math.round((s.uploaded / s.total) * 100) : 0;
+    %>
+      <div class="campaign-card static">
+        <div class="cc-top">
+          <a class="cc-name" href="/campaigns/<%= c.id %>"><%= c.name %></a>
+          <span class="badge <%= c.enabled ? 'uploaded' : 'skipped' %>"><%= c.enabled ? 'aktif' : 'nonaktif' %></span>
+        </div>
+        <div class="cc-meta">
+          <span>🔑 <%= c.accountCount %> akun Buffer</span>
+          <span>👤 <%= c.usernameCount %> username</span>
+          <span>🎬 <%= s.videos %> video</span>
+        </div>
+        <div class="progress"><div class="progress-fill" style="width:<%= pct %>%"></div></div>
+        <div class="cc-foot"><span><%= s.uploaded %> sukses</span><span><%= s.failed %> gagal</span><span><%= pct %>%</span></div>
+        <div class="cc-actions">
+          <a class="btn" href="/campaigns/<%= c.id %>">Buka</a>
+          <form method="post" action="/campaigns/<%= c.id %>/toggle">
+            <button class="btn"><%= c.enabled ? 'Matikan' : 'Aktifkan' %></button>
+          </form>
+          <form method="post" action="/campaigns/<%= c.id %>/remove"
+                data-confirm="Hapus kampanye <%= c.name %> beserta akun & username-nya?">
+            <button class="btn danger">Hapus</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>
